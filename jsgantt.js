@@ -1,12 +1,12 @@
 ﻿/* 
-   _        ___            _   _     _   ____  
-  (_)___   / _ \__ _ _ __ | |_| |_  / | |___ \ 
-  | / __| / /_\/ _` | '_ \| __| __| | |   __) |
-  | \__ \/ /_\\ (_| | | | | |_| |_  | |_ / __/ 
- _/ |___/\____/\__,_|_| |_|\__|\__| |_(_)_____|
-|__/ 
+     _      ____             _   _     _   _____ 
+    | |___ / ___| __ _ _ __ | |_| |_  / | |___ / 
+ _  | / __| |  _ / _` | '_ \| __| __| | |   |_ \ 
+| |_| \__ \ |_| | (_| | | | | |_| |_  | |_ ___) |
+ \___/|___/\____|\__,_|_| |_|\__|\__| |_(_)____/  
 
-Copyright (c) 2009, Shlomy Gantz BlueBrick Inc. All rights reserved.
+Copyright (c) 2017, modified by Muhamamd Wahaj Taseer; original code by
+Shlomy Gantz BlueBrick Inc. All rights reserved.
  
 *
 * Redistribution and use in source and binary forms, with or without
@@ -174,7 +174,7 @@ JSGantt.TaskItem = function(pID, pName, pStart, pEnd, pColor, pLink, pMile, pRes
 		var vNameMaxLen = pNameWidth / 7;	// assuming one char is about 6px width
 		if (vName.length > vNameMaxLen)
 		{
-			vName = vName.substr(0,vNameMaxLen-2) + '...';
+			return vName.substr(0,vNameMaxLen-2) + '...';
 		}
 		return vName
 	};
@@ -187,7 +187,7 @@ JSGantt.TaskItem = function(pID, pName, pStart, pEnd, pColor, pLink, pMile, pRes
 	this.getCaption  = function(){ if(vCaption) return vCaption; else return ''; };
 	this.getResource = function(){ if(vRes) return vRes; else return '&nbsp';  };
 	this.getCompVal  = function(){ if(vComp) return vComp; else return 0; };
-	this.getCompStr  = function(){ if(vComp) return vComp+'%'; else return ''; };
+	this.getCompStr  = function(){ if(vComp || vComp === 0) return vComp+'%'; else return ''; };
 
 	this.getDuration = function(vFormat)
 	{ 
@@ -219,11 +219,11 @@ JSGantt.TaskItem = function(pID, pName, pStart, pEnd, pColor, pLink, pMile, pRes
 		{
 			tmpPer =  Math.ceil((this.getEnd() - this.getStart()) /  (24 * 60 * 60 * 1000) + 1);
 			if(tmpPer == 1) 
-				vDuration = '1 dzień';
+				vDuration = '1 day';
 			else if (tmpPer%10!=1 && tmpPer%10 < 5)
-				vDuration = tmpPer + ' dni';
+				vDuration = tmpPer + ' days';
 			else
-				vDuration = tmpPer + ' dni';
+				vDuration = tmpPer + ' days';
 		}
 
 		//else if(vFormat == 'week') {
@@ -644,7 +644,7 @@ JSGantt.GanttChart =  function(pGanttVar, pDiv, pFormat)
 			// TASKS
 			//
 			for(i = 0; i < vTaskList.length; i++)
-			{
+			{ 
 				if( vTaskList[i].getGroup())
 				{
 					vBGColor = "f3f3f3";
@@ -675,6 +675,7 @@ JSGantt.GanttChart =  function(pGanttVar, pDiv, pFormat)
 
 				for(j=1; j<vTaskList[i].getLevel(); j++)
 				{
+                    if (vTaskList[i])
 					vLeftTable += '&nbsp&nbsp&nbsp&nbsp';
 				}
 
@@ -689,22 +690,45 @@ JSGantt.GanttChart =  function(pGanttVar, pDiv, pFormat)
 				}
 				else
 				{
-					vLeftTable += '<span style="color: #000000; font-weight:bold;">&nbsp&nbsp&nbsp</span>';
+					vLeftTable += '<span style="color: #000000; font-weight:bold;">&nbsp&nbsp</span>';
 				}
 
-				if (vTaskList[i].getLink().length>0)
-				{
+//				if (vTaskList[i].getLink().length>0)
+//				{
 					//vLeftTable += '<span title="'+ vTaskList[i].getName() +'" onclick=JSGantt.taskLink("' + vTaskList[i].getLink() + '",300,200); style="cursor:pointer"> ' + vTaskList[i].getName() + '</span></NOBR></TD>' ;
-					vLeftTable += ' <span title="'+ vTaskList[i].getName() +'" class="linked_task"><a onclick="JSGantt.taskLink(\'' + vTaskList[i].getLink() + '\',700,600); return false;" href="'+ vTaskList[i].getLink() +'" target="_blank">' + vTaskList[i].getShortName(pNameWidth) + '</a></span></nobr></td>' ;
-				}
-				else
-				{
-					vLeftTable += ' <span title="'+ vTaskList[i].getName() +'">' + vTaskList[i].getShortName(pNameWidth) + '</span></nobr></td>' ;
-				}
+//					vLeftTable += ' <span title="'+ vTaskList[i].getName() +'" class="linked_task"><a onclick="JSGantt.taskLink(\'' + name + '\',700,600); return false;" href="'+ vTaskList[i].getLink() +'" target="_blank">' + vTaskList[i].getShortName(pNameWidth) + '</a></span></nobr></td>' ;
+//				}
+//				else
+//				{
+				vLeftTable += ' <span title="'+ vTaskList[i].getName() +'">' + vTaskList[i].getShortName(pNameWidth) + '</span></nobr></td>' ;
+//				}
+                
+                let percentCompStr = vTaskList[i].getCompStr();
+                percentCompStr = (percentCompStr) ? percentCompStr : '0%';
+                let percentColorClass = '';
+                
+                let percentComp = percentCompStr.replace(/%/g, '').trim();
+                if (vShowComp == 1) {
+                    if (parseInt(percentComp) < 25) {
+                        percentColorClass = 'percent_comp_qtr1';
+                    } 
+                    else if (parseInt(percentComp) < 50) {
+                        percentColorClass = 'percent_comp_qtr2';
+                    }                    
+                    else if (parseInt(percentComp) < 75) {
+                        percentColorClass = 'percent_comp_qtr3';
+                    }                    
+                    else if (parseInt(percentComp) < 100) {
+                        percentColorClass = 'percent_comp_qtr4';
+                    }
+                    else if (parseInt(percentComp) === 100) {
+                        percentColorClass = 'percent_comp_qtr5';
+                    }
+                }
 
 				if(vShowRes ==1) vLeftTable += '  <td class="gtaskdesc"><nobr>' + vTaskList[i].getResource() + '</nobr></td>' ;
 				if(vShowDur ==1) vLeftTable += '  <td class="gtaskdesc"><nobr>' + vTaskList[i].getDuration(vFormat) + '</nobr></td>' ;
-				if(vShowComp==1) vLeftTable += '  <td class="gtaskdesc"><nobr>' + vTaskList[i].getCompStr()  + '</nobr></td>' ;
+				if(vShowComp==1) vLeftTable += '  <td class="gtaskdesc '+ percentColorClass +'"><nobr>' + percentCompStr  + '</nobr></td>' ;
 				if(vShowStartDate==1) vLeftTable += '  <td class="gtaskdesc"><nobr>' + JSGantt.formatDateStr( vTaskList[i].getStart(), vDateDisplayFormat) + '</nobr></td>' ;
 				if(vShowEndDate==1) vLeftTable += '  <td class="gtaskdesc"><nobr>' + JSGantt.formatDateStr( vTaskList[i].getEnd(), vDateDisplayFormat) + '</nobr></td>' ;
 
@@ -791,12 +815,10 @@ JSGantt.GanttChart =  function(pGanttVar, pDiv, pFormat)
 				if(vFormat == 'day')
 				{
 					vRightTable += '<td class=gdatehead align=center colspan=7>'
-						+ JSGantt.formatDateStr(vTmpDate, vDateDisplayFormatCaptions[vFormat].from)
-						//+ JSGantt.formatDateStr(vTmpDate,vDateDisplayFormat.substring(0,5)) + ' - '
-						//+ "FIXME" + ' - '
-					;
-					vTmpDate.setDate(vTmpDate.getDate()+6);
-					vRightTable += JSGantt.formatDateStr(vTmpDate, vDateDisplayFormatCaptions[vFormat].to) + '</td>';
+						+ Date.monthNames[vTmpDate.getMonth()] + ' ' + (vTmpDate.getYear()+1900)  // Just shows month and year for every week 
+                        + '</td>';
+                        
+                    vTmpDate.setDate(vTmpDate.getDate()+6);                                       // Previos view of dates
 					vTmpDate.setDate(vTmpDate.getDate()+1);
 				}
 				else if(vFormat == 'week')
@@ -941,22 +963,22 @@ JSGantt.GanttChart =  function(pGanttVar, pDiv, pFormat)
 						vWeekdayColor = "ccccff";
 					else
 						vWeekdayColor = "ffffff";
-
+                    
 					if(vNxtDate <= vMaxDate)
 					{
-						vDateRowStr += '<td class="ghead" bgcolor=#' + vWeekdayColor + ' align=center width:'+vColWidth+'px><div style="width: '+vColWidth+'px">' 
+						vDateRowStr += '<td class="ghead" bgcolor=#' + vWeekdayColor + ' align=center width='+vColWidth+'px><div style="width: '+vColWidth+'px">' 
 							+ JSGantt.formatDateStr(vTmpDate, vDateDisplayFormatCaptions[vFormat].lower)  + '</div></td>';
 						if( vCurrDate >= vTmpDate && vCurrDate < vNxtDate ) 
-							vItemRowStr += '<td class="ghead" bgcolor=#' + vWeekdayColor + ' align=center><div style="width: '+vColWidth+'px">&nbsp&nbsp</div></td>';
+							vItemRowStr += '<td class="ghead" bgcolor=#' + vWeekdayColor + ' align=center><div style="width:'+vColWidth+'px">&nbsp&nbsp</div></td>';
 						else
 							vItemRowStr += '<td class="ghead" align=center><div style="width: '+vColWidth+'px">&nbsp&nbsp</div></td>';
 					}
 					else
 					{
-						vDateRowStr += '<td class="ghead" bgcolor=#' + vWeekdayColor + ' align=center width:'+vColWidth+'px><div style="width: '+vColWidth+'px">' + 
+						vDateRowStr += '<td class="ghead" bgcolor=#' + vWeekdayColor + ' align=center width='+vColWidth+'px><div style="width: '+vColWidth+'px">' + 
 							JSGantt.formatDateStr(vTmpDate, vDateDisplayFormatCaptions[vFormat].lower) + '</div></td>';
 						if( vCurrDate >= vTmpDate && vCurrDate < vNxtDate ) 
-							vItemRowStr += '<td class="ghead" bgcolor=#' + vWeekdayColor + ' align=center><div style="width: '+vColWidth+'px">&nbsp&nbsp</div></td>';
+							vItemRowStr += '<td class="ghead" bgcolor=#' + vWeekdayColor + ' align=center><div style="width:'+vColWidth+'px">&nbsp&nbsp</div></td>';
 						else
 							vItemRowStr += '<td class="ghead" align=center><div style="width: '+vColWidth+'px">&nbsp&nbsp</div></td>';
 					}
@@ -1014,16 +1036,18 @@ JSGantt.GanttChart =  function(pGanttVar, pDiv, pFormat)
 					}
 
 				}
-			}
+			} 
 
 			vRightTable += vDateRowStr + '</tr>';
 			vRightTable += '</tbody></table>';
 
-			// Draw each row
-
+            // Draw each row
 			for(i = 0; i < vTaskList.length; i++)
 			{
-
+                let name = vTaskList[i].getName();
+                var res = name.replace(/&quot;|\'|\+|\"/g, '');
+                name = res.split(/\s+/).join('+');
+                
 				vTmpDate.setFullYear(vMinDate.getFullYear(), vMinDate.getMonth(), vMinDate.getDate());
 				vTaskStart = vTaskList[i].getStart();
 				vTaskEnd   = vTaskList[i].getEnd();
@@ -1068,13 +1092,13 @@ JSGantt.GanttChart =  function(pGanttVar, pDiv, pFormat)
 					vTaskRight = 1
 
 					vRightTable +=
-						'<div id=bardiv_' + vID + ' style="position:absolute; top:0px; left:' + Math.ceil((vTaskLeft * (vDayWidth) - 2)) + 'px; height: 18px; width:15px; overflow:hidden;">' +
-						'  <div id=taskbar_' + vID + ' title="' + vTaskList[i].getName() + ': ' + vDateRowStr + '" style="position:relative;left:3px; height: 16px; width:12px; overflow:hidden; cursor: pointer;" onclick=JSGantt.taskLink("' + vTaskList[i].getLink() + '",300,200);>';
+						'<div id=bardiv_' + vID + ' style="position:absolute; top:0px; left:' + Math.ceil((vTaskLeft * (vDayWidth) - 2)) + 'px; height: 18px; width:16px; overflow:hidden;">' +
+						'  <div id=taskbar_' + vID + ' title="' + vTaskList[i].getName() + ': ' + vDateRowStr + '" style="position:relative;left:2px; height: 20px; width:16px; overflow:hidden; cursor: pointer; font-size:14px;" onclick=JSGantt.taskLink("' + name + '");>';
 
 					if(vTaskList[i].getCompVal() < 100)
-						vRightTable += '&loz;</div>' ;
+						vRightTable += '&#9671;</div>' ;
 					else
-						vRightTable += '&diams;</div>' ;
+						vRightTable += '&#9670;</div>' ;
 
 					if( oJSGant.getCaptionType() )
 					{
@@ -1127,10 +1151,10 @@ JSGantt.GanttChart =  function(pGanttVar, pDiv, pFormat)
 							'<TR id=childrow_' + vID + ' class=yesdisplay bgColor=#f3f3f3 onMouseover="oJSGant.mouseOver(this,' + vID + ',\'right\',\'group\')" onMouseout="oJSGant.mouseOut(this,' + vID + ',\'right\',\'group\')">' + vItemRowStr + '</TR></TABLE></DIV>';
 						vRightTable +=
 							'<div id=bardiv_' + vID + ' style="position:absolute; top:5px; left:' + Math.ceil(vTaskLeft * (vDayWidth) + 1) + 'px; height: 7px; width:' + Math.ceil((vTaskRight) * (vDayWidth) - 1) + 'px">' +
-								'<div id=taskbar_' + vID + ' title="' + vTaskList[i].getName() + ': ' + vDateRowStr + '" class=gtask style="background-color:#000000; height: 7px; width:' + Math.ceil((vTaskRight) * (vDayWidth) -1) + 'px;  cursor: pointer;opacity:0.9;">' +
-									'<div style="Z-INDEX: -4; float:left; background-color:#666666; height:3px; overflow: hidden; margin-top:1px; ' +
+								'<div id=taskbar_' + vID + ' title="' + vTaskList[i].getName() + ': ' + vDateRowStr + '" class=gtask style="background-color:#000000; height: 7px; width:' + Math.ceil((vTaskRight) * (vDayWidth) -1) + 'px;  cursor: pointer;opacity:0.9;" onclick=JSGantt.taskLink("' + name + '"); >' +
+									'<div style="Z-INDEX: -4; float:left; background-color:#fff; height:3px; overflow: hidden; margin-top:1px; ' +
 										'margin-left:1px; margin-right:1px; filter: alpha(opacity=80); opacity:0.8; width:' + vTaskList[i].getCompStr() + '; ' + 
-										'cursor: pointer;" onclick=JSGantt.taskLink("' + vTaskList[i].getLink() + '",300,200);>' +
+										'cursor: pointer;" >' +
 									'</div>' +
 								'</div>' +
 								'<div style="Z-INDEX: -4; float:left; background-color:#000000; height:4px; overflow: hidden; width:1px;"></div>' +
@@ -1161,6 +1185,8 @@ JSGantt.GanttChart =  function(pGanttVar, pDiv, pFormat)
 					}
 					else
 					{
+                        
+                        
 						if (!isDuplicateTaskToBeMovedUp)
 						{
 							vDivStr = '<DIV><TABLE style="position:relative; top:0px; width: ' + vChartWidth + 'px;">' +
@@ -1172,7 +1198,7 @@ JSGantt.GanttChart =  function(pGanttVar, pDiv, pFormat)
 						vRightTable +=
 							'<div id=bardiv_' + vID + ' style="position:absolute; top:4px; left:' + Math.ceil(vTaskLeft * (vDayWidth) + 1) + 'px; width:' + Math.ceil((vTaskRight) * (vDayWidth) - 1) + 'px">' +
 								'<div id=taskbar_' + vID + ' title="' + vTaskList[i].getName() + ': ' + vDateRowStr + '" class=gtask style="background-color:#' + vTaskList[i].getColor() +'; height: 13px; width:' + Math.ceil((vTaskRight) * (vDayWidth) - 1) + 'px; cursor: pointer;opacity:0.9;" ' +
-									'onclick=JSGantt.taskLink("' + vTaskList[i].getLink() + '",300,200); >' +
+									'onclick=JSGantt.taskLink("' + name + '"); >' +
 									'<div class=gcomplete style="Z-INDEX: -4; float:left; background-color:black; height:5px; overflow: auto; margin-top:4px; filter: alpha(opacity=40); opacity:0.4; width:' + vTaskList[i].getCompStr() + '; overflow:hidden">' +
 									'</div>' +
 								'</div>'
@@ -1629,12 +1655,16 @@ JSGantt.show =  function (pID, pTop, ganttObj)
 
 // function to open window to display task link
 
-JSGantt.taskLink = function(pRef,pWidth,pHeight) 
+JSGantt.taskLink = function(pName) 
 {
-	if(pWidth)  vWidth =pWidth;  else vWidth =400;
-	if(pHeight) vHeight=pHeight; else vHeight=400;
+	//if(pWidth)  vWidth =pWidth;  else vWidth =400;
+	//if(pHeight) vHeight=pHeight; else vHeight=400;
 
-	var OpenWindow=window.open(pRef, "newwin", "height="+vHeight+",width="+vWidth);
+	//var OpenWindow=window.open(pRef, "newwin", "height="+vHeight+",width="+vWidth);
+    //window.attachEvent('onload', oJSWikiGanttFrontEnd.startEditor());
+	var OpenWindow=window.open('/index.php?title='+wgTitle+'&action=edit#openTask='+pName+'', "_self");
+    //OpenWindow.focus();
+    //$(OpenWindow.document).onload(oJSWikiGanttFrontEnd.startEditor())
 }
 
 JSGantt.parseDateStr = function(pDateStr,pFormatStr)
@@ -1747,7 +1777,9 @@ JSGantt.AddXMLTask = function(pGanttVar)
 			
 			
 			// Finally add the task
-			pGanttVar.AddTaskItem(new JSGantt.TaskItem(pID , pName, pStart, pEnd, pColor,  pLink, pMile, pRes,  pComp, pGroup, pParent, pOpen, pDepend,pCaption));
+            var nameEscaped = pName.replace(/'/g, '\'');
+            
+			pGanttVar.AddTaskItem(new JSGantt.TaskItem(pID , nameEscaped, pStart, pEnd, pColor,  pLink, pMile, pRes,  pComp, pGroup, pParent, pOpen, pDepend,pCaption));
 		}
 	}
 }
@@ -1826,7 +1858,8 @@ JSGantt.ChromeXMLParse = function (pGanttVar)
 			if(te.length> 2){var pCaption=te[1];} else {var pCaption = "";}
 			
 			// Finally add the task
-			pGanttVar.AddTaskItem(new JSGantt.TaskItem(pID , pName, pStart, pEnd, pColor,  pLink, pMile, pRes,  pComp, pGroup, pParent, pOpen, pDepend,pCaption 	));
+            var nameEscaped = pName.replace(/'/g, '\'');
+			pGanttVar.AddTaskItem(new JSGantt.TaskItem(pID , nameEscaped, pStart, pEnd, pColor,  pLink, pMile, pRes,  pComp, pGroup, pParent, pOpen, pDepend,pCaption 	));
 		}
 	}
 }
